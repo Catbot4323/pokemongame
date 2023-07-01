@@ -2,7 +2,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 
 # Replace with your own Telegram Bot Token
-TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
+TOKEN = "6251146419:AAG71SUf4_r6kNeVYv-AMTKtfKV8N_3hmGo"
 
 # List of starter Pokémon
 starter_pokemon = ["Bulbasaur", "Charmander", "Squirtle"]
