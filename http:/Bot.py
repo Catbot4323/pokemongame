@@ -1,63 +1,54 @@
-import logging
-from telegram import Update
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, ConversationHandler, CallbackContext
+from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
 
-# Set up logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
-logger = logging.getLogger(__name__)
+# Replace with your own Telegram Bot Token
+TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
 
-# Define states for the conversation
-START, CHOOSING_POKEMON, BATTLE = range(3)
+# List of starter Pokémon
+starter_pokemon = ["Bulbasaur", "Charmander", "Squirtle"]
 
-# Your code continues here...
-# Command handlers
-def start(update: Update, _: CallbackContext) -> int:
-    user_id = update.effective_user.id
-    # Your logic to check if the user is new or returning
+# Start command handler
+def start(update: Update, context: CallbackContext):
+    user = update.effective_user
+    message = (
+        f"Hello, {user.first_name}!\n"
+        "Welcome to the Pokémon World! Choose your starter Pokémon:\n"
+    )
 
-def choose_pokemon(update: Update, _: CallbackContext) -> int:
-    # Your logic to present a list of Pokemon to choose from
+    # Create the list of buttons for starter Pokémon selection
+    keyboard = [
+        [InlineKeyboardButton(pokemon, callback_data=pokemon)] for pokemon in starter_pokemon
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-def battle(update: Update, _: CallbackContext) -> None:
-    # Your logic to handle Pokemon battles
+    # Send the message with the selection menu
+    update.message.reply_text(message, reply_markup=reply_markup)
 
-# Message handlers
-def help(update: Update, _: CallbackContext) -> None:
-    # Your logic to display help information
+# Callback query handler for starter Pokémon selection
+def select_starter(update: Update, context: CallbackContext):
+    query = update.callback_query
+    user = update.effective_user
+    selected_pokemon = query.data
 
-def cancel(update: Update, _: CallbackContext) -> int:
-    # Your logic to handle canceling ongoing operations
+    # Replace this with your logic for the starter Pokémon selection process
+    # For example, you can save the user's selection to a database
+    # and continue with the rest of your game logic
 
-# Your code continues here...
-conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
-    states={
-        START: [
-            CommandHandler('start', start),
-            MessageHandler(Filters.text & ~Filters.command, choose_pokemon),
-        ],
-        CHOOSING_POKEMON: [
-            MessageHandler(Filters.text & ~Filters.command, battle),
-        ],
-    },
-    fallbacks=[CommandHandler('cancel', cancel)],
-)
+    query.answer(f"You've chosen {selected_pokemon} as your starter Pokémon!")
 
-# Your code continues here...
-def main() -> None:
-    # Replace '' with your actual bot token
-    updater = Updater("6251146419:AAG71SUf4_r6kNeVYv-AMTKtfKV8N_3hmGo")
+# Main function to run the bot
+def main():
+    updater = Updater(TOKEN)
     dispatcher = updater.dispatcher
 
-    # Add the conversation handler to the dispatcher
-    dispatcher.add_handler(conv_handler)
+    # Register the handlers
+    dispatcher.add_handler(CommandHandler("start", start))
+    dispatcher.add_handler(CallbackQueryHandler(select_starter))
 
     # Start the bot
     updater.start_polling()
-
-    # Run the bot until you press Ctrl-C
     updater.idle()
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
-  
+    
