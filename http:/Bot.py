@@ -1,54 +1,68 @@
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+import random
 
-# Replace with your own Telegram Bot Token
-TOKEN = "6251146419:AAG71SUf4_r6kNeVYv-AMTKtfKV8N_3hmGo"
+# Replace 'YOUR_TELEGRAM_BOT_TOKEN' with your actual bot token
+bot_token = '6251146419:AAG71SUf4_r6kNeVYv-AMTKtfKV8N_3hmGo'
+updater = Updater(token=bot_token, use_context=True)
+dispatcher = updater.dispatcher
 
-# List of starter Pokémon
+# List of starter Pokemon
 starter_pokemon = ["Bulbasaur", "Charmander", "Squirtle"]
 
-# Start command handler
-def start(update: Update, context: CallbackContext):
-    user = update.effective_user
-    message = (
-        f"Hello, {user.first_name}!\n"
-        "Welcome to the Pokémon World! Choose your starter Pokémon:\n"
-    )
+# Dictionary to store user's chosen starter Pokemon
+users_pokemon = {}
 
-    # Create the list of buttons for starter Pokémon selection
-    keyboard = [
-        [InlineKeyboardButton(pokemon, callback_data=pokemon)] for pokemon in starter_pokemon
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
+# Handler for /start command
+def start(update, context):
+    user_id = update.effective_user.id
+    context.bot.send_message(chat_id=user_id, text="Welcome to the Pokemon world! Choose your starter Pokemon.")
 
-    # Send the message with the selection menu
-    update.message.reply_text(message, reply_markup=reply_markup)
+    # Display starter Pokemon options
+    options = "\n".join([f"{index + 1}. {pokemon}" for index, pokemon in enumerate(starter_pokemon)])
+    context.bot.send_message(chat_id=user_id, text=options)
 
-# Callback query handler for starter Pokémon selection
-def select_starter(update: Update, context: CallbackContext):
-    query = update.callback_query
-    user = update.effective_user
-    selected_pokemon = query.data
+# Handler for /choose command
+def choose(update, context):
+    user_id = update.effective_user.id
+    try:
+        choice = int(context.args[0]) - 1
+        chosen_pokemon = starter_pokemon[choice]
 
-    # Replace this with your logic for the starter Pokémon selection process
-    # For example, you can save the user's selection to a database
-    # and continue with the rest of your game logic
+        users_pokemon[user_id] = chosen_pokemon
+        context.bot.send_message(chat_id=user_id, text=f"Congratulations! You chose {chosen_pokemon} as your starter Pokemon.")
+    except (ValueError, IndexError):
+        context.bot.send_message(chat_id=user_id, text="Invalid choice. Please select a number from the list.")
 
-    query.answer(f"You've chosen {selected_pokemon} as your starter Pokémon!")
+# Handler for /pokemon command to display the user's chosen starter Pokemon
+def my_pokemon(update, context):
+    user_id = update.effective_user.id
+    if user_id in users_pokemon:
+        chosen_pokemon = users_pokemon[user_id]
+        context.bot.send_message(chat_id=user_id, text=f"Your starter Pokemon is: {chosen_pokemon}")
+    else:
+        context.bot.send_message(chat_id=user_id, text="You haven't chosen a starter Pokemon yet.")
 
-# Main function to run the bot
-def main():
-    updater = Updater(TOKEN)
-    dispatcher = updater.dispatcher
+# Handler for random wild Pokemon encounter
+def wild_encounter(update, context):
+    user_id = update.effective_user.id
+    if user_id in users_pokemon:
+        chosen_pokemon = users_pokemon[user_id]
 
-    # Register the handlers
-    dispatcher.add_handler(CommandHandler("start", start))
-    dispatcher.add_handler(CallbackQueryHandler(select_starter))
+        # Simulate a wild Pokemon encounter
+        wild_pokemon = random.choice(["Pidgey", "Rattata", "Caterpie", "Weedle", "Spearow"])
 
-    # Start the bot
-    updater.start_polling()
-    updater.idle()
+        context.bot.send_message(chat_id=user_id, text=f"A wild {wild_pokemon} appeared!")
 
-if __name__ == "__main__":
-    main()
-    
+        # You can implement further logic for Pokemon battles and capturing here
+    else:
+        context.bot.send_message(chat_id=user_id, text="You need to choose a starter Pokemon first.")
+
+# Add handlers to the dispatcher
+dispatcher.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("choose", choose, pass_args=True))
+dispatcher.add_handler(CommandHandler("pokemon", my_pokemon))
+dispatcher.add_handler(MessageHandler(Filters.text & ~Filters.command, wild_encounter))
+
+# Start the bot
+updater.start_polling()
+updater.idle()
